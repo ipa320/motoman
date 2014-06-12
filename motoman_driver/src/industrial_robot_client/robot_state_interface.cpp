@@ -45,7 +45,42 @@ RobotStateInterface::RobotStateInterface()
   this->connection_ = NULL;
   this->add_handler(&default_joint_handler_);
   this->add_handler(&default_joint_feedback_handler_);
+  this->add_handler(&default_joint_feedback_ex_handler_);
   this->add_handler(&default_robot_status_handler_);
+}
+
+bool RobotStateInterface::init(std::string default_ip, int default_port, std::string jNames, int robotID)
+{
+  std::string ip;
+  int port;
+
+  this->robot_id_ = robotID;
+  // override IP/port with ROS params, if available
+  ros::param::param<std::string>("robot_ip_address", ip, default_ip);
+  ros::param::param<int>("~port", port, default_port);
+
+  // check for valid parameter values
+  if (ip.empty())
+  {
+    ROS_ERROR("No valid robot IP address found.  Please set ROS 'robot_ip_address' param");
+    return false;
+  }
+  if (port <= 0)
+  {
+    ROS_ERROR("No valid robot IP port found.  Please set ROS '~port' param");
+    return false;
+  }
+
+  char* ip_addr = strdup(ip.c_str());  // connection.init() requires "char*", not "const char*"
+  ROS_INFO("Robot state connecting to IP address: '%s:%d'", ip_addr, port);
+  default_tcp_connection_.init(ip_addr, port);
+  free(ip_addr);
+
+  std::vector<std::string> joint_names;
+  if (!getJointNames(jNames, "robot_description", joint_names))
+    ROS_WARN("Unable to read 'controller_joint_names' param.  Using standard 6-DOF joint names.");
+
+  return init(&default_tcp_connection_, joint_names);
 }
 
 bool RobotStateInterface::init(std::string default_ip, int default_port)
@@ -101,13 +136,19 @@ bool RobotStateInterface::init(SmplMsgConnection* connection, std::vector<std::s
     return false;
   this->add_handler(&default_joint_handler_);
 
-  if (!default_joint_feedback_handler_.init(connection_, joint_names_))
+  if (!default_joint_feedback_handler_.init(connection_, joint_names_, this->get_robot_id()))
     return false;
   this->add_handler(&default_joint_feedback_handler_);
+
+  if (!default_joint_feedback_ex_handler_.init(connection_, joint_names_))
+    return false;
+  this->add_handler(&default_joint_feedback_ex_handler_);
 
   if (!default_robot_status_handler_.init(connection_))
       return false;
   this->add_handler(&default_robot_status_handler_);
+
+  //TDF: handler for the ex message
 
   return true;
 }

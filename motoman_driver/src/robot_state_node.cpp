@@ -42,9 +42,16 @@ int main(int argc, char** argv)
 
   // launch the default Robot State Interface connection/handlers
   RobotStateInterface rsi;
+  /*
   if (rsi.init("", FS100_state_port))
   {
     rsi.run();
   }
+  */
+  if (rsi.init("", FS100_state_port, "controller_joint_r2_names",1))
+  {
+    rsi.run();
+  }
+
   return 0;
 }
