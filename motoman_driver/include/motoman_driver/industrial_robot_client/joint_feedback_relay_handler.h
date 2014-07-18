@@ -78,6 +78,9 @@ public:
  virtual bool init(SmplMsgConnection* connection,
                     std::vector<std::string> &joint_names);
 
+ virtual bool init(SmplMsgConnection* connection,
+                     std::vector<std::string> &joint_names, int robot_id);
+
 protected:
  int robot_id_;
 

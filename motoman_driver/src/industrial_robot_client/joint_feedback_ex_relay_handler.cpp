@@ -1,35 +1,4 @@
-/*
-* Software License Agreement (BSD License) 
-*
-* Copyright (c) 2013, Southwest Research Institute
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*
-* 	* Redistributions of source code must retain the above copyright
-* 	notice, this list of conditions and the following disclaimer.
-* 	* Redistributions in binary form must reproduce the above copyright
-* 	notice, this list of conditions and the following disclaimer in the
-* 	documentation and/or other materials provided with the distribution.
-* 	* Neither the name of the Southwest Research Institute, nor the names 
-*	of its contributors may be used to endorse or promote products derived
-*	from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-*/ 
-
-#include "motoman_driver/industrial_robot_client/joint_feedback_relay_handler.h"
+#include "motoman_driver/industrial_robot_client/joint_feedback_ex_relay_handler.h"
 #include "simple_message/log_wrapper.h"
 
 using industrial::joint_data::JointData;
@@ -38,13 +7,13 @@ using namespace industrial::simple_message;
 
 namespace industrial_robot_client
 {
-namespace joint_feedback_relay_handler
+namespace joint_feedback_ex_relay_handler
 {
 
-bool JointFeedbackRelayHandler::init(SmplMsgConnection* connection,
+bool JointFeedbackExRelayHandler::init(SmplMsgConnection* connection,
                                      std::vector<std::string> &joint_names)
 {
-  bool rtn = JointRelayHandler::init(connection, (int)StandardMsgTypes::JOINT_FEEDBACK, joint_names);
+  bool rtn = JointRelayHandler::init(connection, (int)StandardMsgTypes::JOINT_FEEDBACK_EX, joint_names);
 
   // try to read robot_id parameter, if none specified
   if ( (robot_id_ < 0) )
@@ -53,28 +22,13 @@ bool JointFeedbackRelayHandler::init(SmplMsgConnection* connection,
   return rtn;
 }
 
-bool JointFeedbackRelayHandler::init(SmplMsgConnection* connection,
-                                     std::vector<std::string> &joint_names, int robot_id)
-{
-  bool rtn = JointRelayHandler::init(connection, (int)StandardMsgTypes::JOINT_FEEDBACK, joint_names);
 
-  this->robot_id_ = robot_id;
-  LOG_ERROR("robot_id: %d", robot_id);
-  // try to read robot_id parameter, if none specified
-  if ( (robot_id_ < 0) )
-    node_.param("robot_id", robot_id_, 0);
-
-  return rtn;
-}
-
-
-bool JointFeedbackRelayHandler::create_messages(SimpleMessage& msg_in,
+bool JointFeedbackExRelayHandler::create_messages(SimpleMessage& msg_in,
                                                 control_msgs::FollowJointTrajectoryFeedback* control_state,
                                                 sensor_msgs::JointState* sensor_state)
 {
   // inspect robot_id field first, to avoid "Failed to Convert" message
   JointFeedbackMessage tmp_msg;
-
   if (tmp_msg.init(msg_in) && (tmp_msg.getRobotID() != robot_id_))
   {
     LOG_COMM("Ignoring Message: robotID (%d) doesn't match expected (%d)",
@@ -85,7 +39,7 @@ bool JointFeedbackRelayHandler::create_messages(SimpleMessage& msg_in,
   return JointRelayHandler::create_messages(msg_in, control_state, sensor_state);
 }
 
-bool JointFeedbackRelayHandler::convert_message(SimpleMessage& msg_in, JointTrajectoryPoint* joint_state)
+bool JointFeedbackExRelayHandler::convert_message(SimpleMessage& msg_in, JointTrajectoryPoint* joint_state)
 {
   JointFeedbackMessage joint_feedback_msg;
 
@@ -98,7 +52,7 @@ bool JointFeedbackRelayHandler::convert_message(SimpleMessage& msg_in, JointTraj
   return convert_message(joint_feedback_msg, joint_state);
 }
 
-bool JointFeedbackRelayHandler::JointDataToVector(const JointData &joints,
+bool JointFeedbackExRelayHandler::JointDataToVector(const JointData &joints,
                                                   std::vector<double> &vec,
                                                   int len)
 {
@@ -116,12 +70,11 @@ bool JointFeedbackRelayHandler::JointDataToVector(const JointData &joints,
   return true;
 }
 
-bool JointFeedbackRelayHandler::convert_message(JointFeedbackMessage& msg_in, JointTrajectoryPoint* joint_state)
+bool JointFeedbackExRelayHandler::convert_message(JointFeedbackMessage& msg_in, JointTrajectoryPoint* joint_state)
 {
   JointData values;
   int num_jnts = all_joint_names_.size();
 
-  LOG_ERROR("ID:%d", msg_in.getRobotID());
   // copy position data
   if (msg_in.getPositions(values))
   {
@@ -165,8 +118,9 @@ bool JointFeedbackRelayHandler::convert_message(JointFeedbackMessage& msg_in, Jo
   return true;
 }
 
-}//namespace joint_feedback_relay_handler
+}//namespace joint_feedback_ex_relay_handler
 }//namespace industrial_robot_client
+
 
 
 

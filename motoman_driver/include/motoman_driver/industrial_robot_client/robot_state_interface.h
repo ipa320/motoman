@@ -41,6 +41,7 @@
 #include "simple_message/socket/tcp_client.h"
 #include "motoman_driver/industrial_robot_client/joint_relay_handler.h"
 #include "motoman_driver/industrial_robot_client/joint_feedback_relay_handler.h"
+#include "motoman_driver/industrial_robot_client/joint_feedback_ex_relay_handler.h"
 #include "industrial_robot_client/robot_status_relay_handler.h"
 
 namespace industrial_robot_client
@@ -54,6 +55,7 @@ using industrial::message_handler::MessageHandler;
 using industrial::tcp_client::TcpClient;
 using industrial_robot_client::joint_relay_handler::JointRelayHandler;
 using industrial_robot_client::joint_feedback_relay_handler::JointFeedbackRelayHandler;
+using industrial_robot_client::joint_feedback_ex_relay_handler::JointFeedbackExRelayHandler;
 using industrial_robot_client::robot_status_relay_handler::RobotStatusRelayHandler;
 namespace StandardSocketPorts = industrial::simple_socket::StandardSocketPorts;
 
@@ -74,6 +76,19 @@ public:
    * \brief Default constructor.
    */
   RobotStateInterface();
+
+  /**
+   * \brief Initialize robot connection using default method.
+   *
+   * \param default_ip default IP address to use for robot connection [OPTIONAL]
+   *                    - this value will be used if ROS param "robot_ip_address" cannot be read
+   * \param default_port default port to use for robot connection [OPTIONAL]
+   *                    - this value will be used if ROS param "~port" cannot be read
+   *
+   * \return true on success, false otherwise
+   */
+  bool init(std::string default_ip = "", int default_port = StandardSocketPorts::STATE, std::string joint_names="controller_joint_names", int robot_id=0 );
+
 
   /**
    * \brief Initialize robot connection using default method.
@@ -138,6 +153,11 @@ public:
     return this->joint_names_;
   }
 
+ int get_robot_id()
+  {
+    return this->robot_id_;
+  }
+
 
   /**
    * \brief Add a new handler.
@@ -154,11 +174,13 @@ protected:
   TcpClient default_tcp_connection_;
   JointRelayHandler default_joint_handler_;
   JointFeedbackRelayHandler default_joint_feedback_handler_;
+  JointFeedbackExRelayHandler default_joint_feedback_ex_handler_;
   RobotStatusRelayHandler default_robot_status_handler_;
 
   SmplMsgConnection* connection_;
   MessageManager manager_;
   std::vector<std::string> joint_names_;
+  int robot_id_;
 
 };//class RobotStateInterface
 
